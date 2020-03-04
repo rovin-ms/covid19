@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        h1 {
+            font-size: 40px;
+            font-weight: normal;
+            color: rosybrown;
+            text-align: center;
+        }
+        p {
+            font-size: 25px;
+            font-family: Arial, Helvetica, sans-serif;
+            vertical-align: top;
+            font-weight: normal;
+            color: rosybrown;
+
+        }
+        title {
+            text-align: center;
+        }
+        body {
+            margin: 6px;
+        }
+        .grid {
+            position: relative;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: grid;
+            grid-template-areas:
+                "header"
+                "nav"
+                "main"
+                "right"
+                "footer";
+            grid-template-columns: 100%;
+            grid-template-rows:
+                100px
+                300px 
+                1fr
+                50px
+                50px;
+            grid-gap: 2px 2px;
+            height: calc(100vh - 12px); /* 2x the gap */
+        }
+
+        .grid > * {
+            display:grid;
+        }
+
+        .grid p {
+            justify-self: top;
+            align-self: top;
+        }
+
+        .grid_header { 
+            background-color: #202020;
+            grid-area: header; 
+        }
+        .grid_main {
+        background-color: #202020;
+        grid-area: main; 
+        }
+        .grid_left { 
+            background-color: #202020;
+            grid-area: nav;
+        }
+        .grid_right { 
+            background-color:#202020;
+            grid-area: right;
+        }
+        .grid_footer {
+        background-color: #202020;
+        grid-area: footer;
+        }
+
+        @media screen and (min-width: 600px) {
+        .grid {
+            grid-template-areas:
+            "header header header"
+            "nav main right"
+            "footer footer footer";
+            grid-template-columns:
+            300px 1fr 250px;
+            grid-template-rows:
+            75px
+            1fr
+            100px;
+        }
+        }
+    </style>
+
+    <title>Coronavirus COVID-19 Dashboard</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="Coronovirus COVID-19 Dashboard" />
+    <meta name="keywords" content="Coronovirus Covid Covid-19" />
+    <meta name="author" content="Microsoft Azure Maps" />
+
+    <!-- Add references to the Azure Maps Map control JavaScript and CSS files. -->
+
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.css" type="text/css" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/d3/5.7.0/d3.min.js">
+  
+    <!-- Add reference to the Azure Maps Spatial IO module. -->
+    <script src="https://atlas.microsoft.com/sdk/javascript/spatial/0/atlas-spatial.min.js"></script>
+    <script type='text/javascript'>
+        var map, datasource, layer;
+
+        function GetMap() {
+            
+            //Initialize a map instance.
+            map = new atlas.Map('myMap', {
+                center: [-97.4, 39.6],
+                   zoom: 14,
+                style: "grayscale_dark",
+                //Add your Azure Maps subscription key to the map SDK. Get an Azure Maps key at https://azure.com/maps
+                authOptions: {
+                    authType: 'subscriptionKey',
+                    subscriptionKey: ''
+                }
+            });
+
+            const xlabels = [];
+            const yvalues = [];
+            var total = 0;
+
+            //Wait until the map resources are ready.
+            map.events.add('ready', function () {
+
+                fetch('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/03-03-2020.csv')
+				.then((response) => {
+					return response.text();
+				})
+				.then((data) => { 
+					data = data.replace('&#x2F;', /\//g );
+                    var rows = data.split('\n').slice(1);
+
+                    // top 10 countries
+                     for (let i = 0; i < 10; i++) {
+                        const columns = rows[i].split(',');
+
+                        let area = '';
+                        if (columns[0] !== '')
+                            area = columns[0];
+                        else
+                            area =  columns[1];     
+
+                        xlabels.push(area);
+                        const cases = columns[3];
+                        yvalues.push(cases);
+                    }
+
+                    // Total Cases
+                    let countTotalCases = 0;
+                    let sumTotalCases = 0;
+                    var arr = parseCSV(data);
+
+                    for (let j=1; j < arr.length; j++) {
+                        let rec = arr[j];
+                        countTotalCases = parseInt(rec[3]);
+                        sumTotalCases = sumTotalCases + countTotalCases;
+                    }
+                    var ctx = document.getElementById('totalCases').innerHTML = 'Total Cases: ' + sumTotalCases.toLocaleString();
+                    
+                    // Total Recovered
+                    let countTotalRecovered = 0;
+                    let sumTotalRecovered = 0;
+
+                    for (let j=1; j < arr.length; j++) {
+                        let rec = arr[j];
+                        countTotalRecovered = parseInt(rec[5]);
+                        sumTotalRecovered = countTotalRecovered + sumTotalRecovered;
+                    }
+                    var ctx = document.getElementById('totalRecov').innerHTML = 'Total Recovered: ' + sumTotalRecovered.toLocaleString();
+
+
+                    // Total Deaths
+                    let countTotalDeaths = 0;
+                    let sumTotalDeaths = 0;
+
+                    for (let j=1; j < arr.length; j++) {
+                        let rec = arr[j];
+                        countTotalDeaths = parseInt(rec[4]);
+                        sumTotalDeaths = countTotalDeaths + sumTotalDeaths;
+                    }
+                    var ctx = document.getElementById('totalDeaths').innerHTML = 'Total Deaths: ' + sumTotalDeaths.toLocaleString();
+
+                    // Chart
+                    var ctx = document.getElementById('chart').getContext('2d');
+                    //ctx.style.backgroundColor = 'rgba(50,50,50,255)';
+                    var chart = new Chart(ctx, {
+                        type: 'horizontalBar',   
+                        backgroundColor: 'rgb(100,100,100, 0.1)',  
+                        data: {
+                            labels: xlabels,
+                            datasets: [
+                                {
+                                    data: yvalues,
+                                    backgroundColor: 'rgb(255,99,132,0.5)'
+                                }
+                            ]   
+                        },
+                        options: {
+                            title: {
+                                display: true,
+                                fontSize: 15,
+                                text: 'Top 10 Confirmed Cases by Province/State'
+                            },
+                            legend: {
+                                display: false
+                            },
+                            scales: {
+                                yAxes: [{
+                                    ticks: {
+                                        fontSize: 20
+                                    }
+                                }]
+                            }
+                        }
+                    });    
+                });
+
+                //Create a data source and add it to the map.
+                datasource = new atlas.source.DataSource();
+                map.sources.add(datasource);
+
+                //Add a simple data layer for rendering the data.
+                layer = new atlas.layer.SimpleDataLayer(datasource);
+
+                map.layers.add(new atlas.layer.HeatMapLayer(datasource, null, {
+                    radius: 10,
+                    opacity: 0.8
+                    }), 'labels');
+
+				//Workaround: fetcht he data and replace all "/" values with their escaped version so that they don't get read as paths.				
+				fetch('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv')
+				.then((response) => {
+					return response.text();
+				})
+				.then((data) => { 
+					data = data.replace(/\//g, '&#x2F;');
+
+					//Read an XML file from a URL or pass in a raw XML string.
+					atlas.io.read(data).then(r => {
+						if (r) {
+							//Add the feature data to the data source.
+							datasource.add(r);
+
+							//If bounding box information is known for data, set the map view to it.
+							if (r.bbox) {
+								map.setCamera({ bounds: r.bbox, padding: 50 });
+							}
+						}
+					});
+				});
+            });
+        }
+
+        function parseCSV(str) {
+            var arr = [];
+            var quote = false;  // true means we're inside a quoted field
+
+            // iterate over each character, keep track of current row and column (of the returned array)
+            for (var row = 0, col = 0, c = 0; c < str.length; c++) {
+                var cc = str[c], nc = str[c+1];        // current character, next character
+                arr[row] = arr[row] || [];             // create a new row if necessary
+                arr[row][col] = arr[row][col] || '';   // create a new column (start with empty string) if necessary
+
+                // If the current character is a quotation mark, and we're inside a
+                // quoted field, and the next character is also a quotation mark,
+                // add a quotation mark to the current column and skip the next character
+                if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }  
+
+                // If it's just one quotation mark, begin/end quoted field
+                if (cc == '"') { quote = !quote; continue; }
+
+                // If it's a comma and we're not in a quoted field, move on to the next column
+                if (cc == ',' && !quote) { ++col; continue; }
+
+                // If it's a newline (CRLF) and we're not in a quoted field, skip the next character
+                // and move on to the next row and move to column 0 of that new row
+                if (cc == '\r' && nc == '\n' && !quote) { ++row; col = 0; ++c; continue; }
+
+                // If it's a newline (LF or CR) and we're not in a quoted field,
+                // move on to the next row and move to column 0 of that new row
+                if (cc == '\n' && !quote) { ++row; col = 0; continue; }
+                if (cc == '\r' && !quote) { ++row; col = 0; continue; }
+
+                // Otherwise, append the current character to the current column
+                arr[row][col] += cc;
+            }
+            return arr;
+}
+    </script>
+</head>
+
+<body onload="GetMap()">
+    <body>
+        <div class="grid">  
+            <header class="grid_header">
+                <h1>Coronavirus COVID-19 Confirmed Worldwide Cases</h1>
+            </header>
+            <main class="grid_main">
+                <div class="column right" id="myMap" style="background-color:#bbb;"></div>
+            </main>
+            <aside class="grid_left">
+                <canvas class="column left" id="chart" style="background-color: rgb(22, 21, 21);" height="1000" ></canvas>
+            </aside>
+            <aside class="grid_right">
+              <p id="totalCases" >Total Cases:</p>
+              <p id="totalRecov" >
+                  Total Recovered:</p>
+                  <p id="totalDeaths" >
+                    Total Deaths:</p>
+            </aside>
+           <!-- <footer class="grid_footer">
+              <p></p>
+            </footer> -->
+          </div> 
+      </body>
+</body>
+</html>
