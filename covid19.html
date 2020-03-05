@@ -2,6 +2,12 @@
 <html lang="en">
 <head>
     <style>
+	html, body {
+	margin: 3px;
+	padding: 0;
+	height: calc(100vh - 24px);
+	width: calc(100vw - 12px);	
+	}
         h1 {
             font-size: 40px;
             font-weight: normal;
@@ -19,15 +25,8 @@
         title {
             text-align: center;
         }
-        body {
-            margin: 6px;
-        }
         .grid {
             position: relative;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
             display: grid;
             grid-template-areas:
                 "header"
@@ -35,13 +34,8 @@
                 "main"
                 "right"
                 "footer";
-            grid-template-columns: 100%;
-            grid-template-rows:
-                100px
-                300px 
-                1fr
-                50px
-                50px;
+            grid-template-columns: 300px 1fr 250px;;
+            grid-template-rows: 75px 1fr;
             grid-gap: 2px 2px;
             height: calc(100vh - 12px); /* 2x the gap */
         }
@@ -60,14 +54,19 @@
             grid-area: header; 
         }
         .grid_main {
+			height:calc(100vh - 85px);
         background-color: #202020;
         grid-area: main; 
         }
         .grid_left { 
+			height:calc(100vh - 85px);
+			overflow-y: auto;
+			overflow-x: hidden;
             background-color: #202020;
             grid-area: nav;
         }
         .grid_right { 
+			height:calc(100vh - 85px);
             background-color:#202020;
             grid-area: right;
         }
@@ -80,14 +79,9 @@
         .grid {
             grid-template-areas:
             "header header header"
-            "nav main right"
-            "footer footer footer";
-            grid-template-columns:
-            300px 1fr 250px;
-            grid-template-rows:
-            75px
-            1fr
-            100px;
+            "nav main right";
+            grid-template-columns:   300px 1fr 250px;
+            grid-template-rows: 75px 1fr;
         }
         }
     </style>
@@ -119,7 +113,7 @@
             //Initialize a map instance.
             map = new atlas.Map('myMap', {
                 center: [-97.4, 39.6],
-                   zoom: 14,
+                   zoom: 3,
                 style: "grayscale_dark",
                 //Add your Azure Maps subscription key to the map SDK. Get an Azure Maps key at https://azure.com/maps
                 authOptions: {
@@ -140,7 +134,7 @@
 					return response.text();
 				})
 				.then((data) => { 
-					data = data.replace('&#x2F;', /\//g );
+					data = data.replace(/\//g, '&#x2F;');
                     var rows = data.split('\n').slice(1);
 
                     // top 10 countries
@@ -256,7 +250,7 @@
 
 							//If bounding box information is known for data, set the map view to it.
 							if (r.bbox) {
-								map.setCamera({ bounds: r.bbox, padding: 50 });
+								//map.setCamera({ bounds: r.bbox, padding: 50 });
 							}
 						}
 					});
