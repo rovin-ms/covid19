@@ -118,7 +118,7 @@
                 //Add your Azure Maps subscription key to the map SDK. Get an Azure Maps key at https://azure.com/maps
                 authOptions: {
                     authType: 'subscriptionKey',
-                    subscriptionKey: ''
+                    subscriptionKey: 'insert key here'
                 }
             });
 
@@ -129,7 +129,7 @@
             //Wait until the map resources are ready.
             map.events.add('ready', function () {
 
-                fetch('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/03-03-2020.csv')
+                fetch('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/03-04-2020.csv')
 				.then((response) => {
 					return response.text();
 				})
@@ -173,7 +173,7 @@
                         countTotalRecovered = parseInt(rec[5]);
                         sumTotalRecovered = countTotalRecovered + sumTotalRecovered;
                     }
-                    var ctx = document.getElementById('totalRecov').innerHTML = 'Total Recovered: ' + sumTotalRecovered.toLocaleString();
+                    var ctx = document.getElementById('totalRecov').innerHTML = 'Total Recovered:  ' + sumTotalRecovered.toLocaleString();
 
 
                     // Total Deaths
@@ -309,10 +309,10 @@
                 <canvas class="column left" id="chart" style="background-color: rgb(22, 21, 21);" height="1000" ></canvas>
             </aside>
             <aside class="grid_right">
-              <p id="totalCases" >Total Cases:</p>
-              <p id="totalRecov" >
+              <p id="totalCases" align="right" >Total Cases:</p>
+              <p id="totalRecov" align="right">
                   Total Recovered:</p>
-                  <p id="totalDeaths" >
+                  <p id="totalDeaths" align="right">
                     Total Deaths:</p>
             </aside>
            <!-- <footer class="grid_footer">
