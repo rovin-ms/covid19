@@ -7,19 +7,27 @@
 	padding: 0;
 	height: calc(100vh - 24px);
 	width: calc(100vw - 12px);	
+	color: white;
+	}
+	#myMap{
+	height: 100%;
 	}
         h1 {
             font-size: 40px;
             font-weight: normal;
-            color: rosybrown;
+            color: white;
             text-align: center;
+			font-family: Arial;
         }
-        p {
-            font-size: 25px;
+		h3 {
+			font-size: 16px;
+		}
+        .rightSide {
+            font-size: 14px;
             font-family: Arial, Helvetica, sans-serif;
             vertical-align: top;
             font-weight: normal;
-            color: rosybrown;
+            color: white;
 
         }
         title {
@@ -34,7 +42,7 @@
                 "main"
                 "right"
                 "footer";
-            grid-template-columns: 300px 1fr 250px;;
+            grid-template-columns: 300px 1fr 180px;
             grid-template-rows: 75px 1fr;
             grid-gap: 2px 2px;
             height: calc(100vh - 12px); /* 2x the gap */
@@ -50,28 +58,29 @@
         }
 
         .grid_header { 
-            background-color: #202020;
+            background-color: #343740;
             grid-area: header; 
         }
         .grid_main {
 			height:calc(100vh - 85px);
-        background-color: #202020;
+        background-color: #343740;
         grid-area: main; 
         }
         .grid_left { 
 			height:calc(100vh - 85px);
 			overflow-y: auto;
 			overflow-x: hidden;
-            background-color: #202020;
+            background-color: #343740;
             grid-area: nav;
         }
         .grid_right { 
-			height:calc(100vh - 85px);
-            background-color:#202020;
+			padding:10px;
+			height:calc(100vh - 105px);
+            background-color:#343740;
             grid-area: right;
         }
         .grid_footer {
-        background-color: #202020;
+        background-color: #343740;
         grid-area: footer;
         }
 
@@ -80,10 +89,47 @@
             grid-template-areas:
             "header header header"
             "nav main right";
-            grid-template-columns:   300px 1fr 250px;
+            grid-template-columns:   300px 1fr 180px;
             grid-template-rows: 75px 1fr;
         }
         }
+		
+		#DataLabel {
+			font-size:14px;
+			padding: 10px;
+		}
+		
+		a:link, a:visited, a:active {
+		  color: dodgerblue;
+		}
+
+		a:hover {
+		  color: yellow;
+		}
+
+		#timeControl{
+			position: absolute;
+			left: 320px;
+			bottom:10px;
+			padding:10px;
+			border-radius:10px;
+			background-color: white;
+			color: black;
+			width: 260px;
+		}
+		
+		.timeControl-label {
+			margin-left:10px;
+		}
+		
+		.chartArea {
+			height: calc(100% - 150px);
+		}
+		
+		.legendText{
+			font-size: 14px;
+			fill: white;
+		}
     </style>
 
     <title>Coronavirus COVID-19 Dashboard</title>
@@ -105,36 +151,560 @@
   
     <!-- Add reference to the Azure Maps Spatial IO module. -->
     <script src="https://atlas.microsoft.com/sdk/javascript/spatial/0/atlas-spatial.min.js"></script>
-    <script type='text/javascript'>
-        var map, datasource, layer;
+    <script src="PieChartMarker.js"></script>
+
+    <script src="HtmlMarkerLayer.js"></script>
+
+
+</head>
+
+<body onload="GetMap()">
+        <div class="grid">  
+            <header class="grid_header">
+                <h1>Coronavirus COVID-19 Confirmed Worldwide Cases</h1>
+            </header>
+            <main class="grid_main">
+                <div class="column right">
+					<div id="myMap" style="background-color:black;"></div>			
+
+					<div id="timeControl" style="display:none">
+						<input id="playPauseBtn" type="button" value="&#9658;" onclick="togglePlayPause()" />
+						<input type="range" id="TimeOffset" style="width:150px;vertical-align:middle;" value="0" min="0" max="15" step="1" onchange="timeSliderMoved()"  oninput="timeSliderMoved()" />
+						<span class="timeControl-label"></span>
+					</div>
+		    </div>
+            </main>
+            <aside id="leftGrid" class="grid_left">
+				<div class="chartArea">
+					<canvas class="column left" id="chart" style="background-color: #343740;" ></canvas>
+					<div id="DataLabel"></div>		
+				</div>
+            </aside>
+            <aside class="grid_right">
+			<div class="rightSide">
+					
+				
+				<h3>Total</h3>
+				  <div id="totalCases" ></div>
+				  <div id="totalRecov" ></div>
+                  <div id="totalDeaths" ></div>
+				  <div id="totalActive" ></div>
+				  
+					<h3>Metric</h3>
+					<label style="color:dodgerblue">
+					  <input type="radio" checked="checked" name="dataLayers" onclick="updateLayers('Confirmed')">Confirmed
+					</label><br/>
+					<label style="color:limegreen">
+					  <input type="radio" name="dataLayers" onclick="updateLayers('Recovered')">Recovered
+					</label><br/>
+					<label style="color:red">
+					  <input type="radio" name="dataLayers" onclick="updateLayers('Deaths')">Deaths
+					</label><br/>
+					<label style="color:darkorange">
+					  <input type="radio" name="dataLayers" onclick="updateLayers('Active')">Active
+					</label>
+					
+					<h3>Map layer</h3>
+					
+					<label>
+					  <input type="radio" checked="checked" name="mapLayers" onclick="selectLayer('bubbles')">Bubbles
+					</label><br/>
+					<label>
+					  <input type="radio" name="mapLayers" onclick="selectLayer('heatmap')">Heat map
+					</label><br/>
+					<label>
+					  <input type="radio" name="mapLayers" onclick="selectLayer('piecharts')">Pie charts
+					</label><br/>
+					<label>
+					  <input type="radio" name="mapLayers" onclick="selectLayer('timeseries')">Time series
+					</label>
+					
+					
+					<div id="legend">
+					<h3>Legend</h3>
+					<center>
+					<svg height="100" width="100">
+					  <circle cx="50" cy="59" r="40" stroke="white" stroke-width="1" fill="dodgerblue" />
+					  <circle cx="50" cy="77" r="22" stroke="white" stroke-width="1" fill="dodgerblue" />
+					  <circle cx="50" cy="95" r="4" stroke="white" stroke-width="1" fill="dodgerblue" />
+					  <text x="28" y="15" class="legendText">10,000</text>
+					  <text x="32" y="50" class="legendText">5,000</text>
+					  <text x="41" y="90" class="legendText">10</text>
+					</svg> 
+					</center>
+					</div>
+			</div>					
+            </aside>
+          </div> 
+		  
+		      <script type='text/javascript'>
+        var map, datasource, clusterDs, heatmap, bubbles, timeSeriesLayer, popup, dateOffset = -1, currentDateTxt, currentDate, currentDataSet = 'Confirmed', currentMapLayer = 'bubbles', currentTimeStamp;
+		
+		var timeseriesData = {};
+		var timestamps = [];
+		
+		var summaryDataIdx = {};
+		var summaryData = [];
+
+		var dateRx=/[0-9]+\&\#x2F;[0-9]+\&\#x2F;[0-9]+/;
+			
+		//Pie chart settings
+		var markers = [];	        
+        var legend = ['Confirmed', 'Recovered', 'Deaths'];		
+        var entityTypesColors = ['dodgerblue', 'limegreen', 'red'];
+        var minRadius = 10, maxRadius = 50;  
+		
+		//Layer settings.
+		var upperLimit = 10000;
+		
+		var bubbleOptions = {
+			Confirmed: {			
+				color: 'dodgerblue',
+					
+				radius: [
+					'interpolate',
+					['linear'],
+					['get', 'Confirmed'],
+					0, 4,
+					upperLimit, 40
+				]
+			},
+			Active: {			
+				color: 'darkorange',
+					
+				radius: [
+					'interpolate',
+					['linear'],
+					['get', 'Confirmed'],
+					0, 4,
+					upperLimit, 40
+				]
+			},
+			Recovered: {			
+				color: 'limegreen',
+								
+				radius: [
+					'interpolate',
+					['linear'],
+					['get', 'Recovered'],
+					0, 4,
+					upperLimit, 40
+				]
+			},
+			Deaths: {			
+				color: 'red',
+					
+				radius: [
+					'interpolate',
+					['linear'],
+					['get', 'Deaths'],
+					0, 4,
+					upperLimit, 40
+				]
+			}
+		};
+		
+		var heatmapOptions = {
+			Confirmed: {                    
+				radius:  [
+					'interpolate',
+					['linear'], 
+					['get', 'Confirmed'],
+					0, 5,
+					1000, 20
+				],
+				weight:  [
+					'interpolate',
+					['linear'], 
+					['get', 'Confirmed'],
+					0, 0.1,
+					1000, 1
+				]	
+			},			
+			Active: {                    
+				radius:  [
+					'interpolate',
+					['linear'], 
+					['get', 'Active'],
+					0, 5,
+					1000, 20
+				],
+				weight:  [
+					'interpolate',
+					['linear'], 
+					['get', 'Active'],
+					0, 0.1,
+					1000, 1
+				]	
+			},			
+			Recovered: {                    
+				radius:  [
+					'interpolate',
+					['linear'], 
+					['get', 'Recovered'],
+					0, 5,
+					1000, 20
+				],
+				weight:  [
+					'interpolate',
+					['linear'], 
+					['get', 'Recovered'],
+					0, 0.1,
+					1000, 1
+				]	
+			},			
+			Deaths: {                    
+				radius:  [
+					'interpolate',
+					['linear'], 
+					['get', 'Deaths'],
+					0, 5,
+					1000, 20
+				],
+				weight:  [
+					'interpolate',
+					['linear'], 
+					['get', 'Deaths'],
+					0, 0.1,
+					1000, 1
+				]	
+			}		
+		};
 
         function GetMap() {
             
             //Initialize a map instance.
             map = new atlas.Map('myMap', {
-                center: [-97.4, 39.6],
-                   zoom: 3,
                 style: "grayscale_dark",
                 //Add your Azure Maps subscription key to the map SDK. Get an Azure Maps key at https://azure.com/maps
                 authOptions: {
                     authType: 'subscriptionKey',
                     subscriptionKey: ''
                 }
-            });
-
-            const xlabels = [];
-            const yvalues = [];
-            var total = 0;
+				});
 
             //Wait until the map resources are ready.
             map.events.add('ready', function () {
+			
+			map.controls.add([
+				new atlas.control.ZoomControl(),
+				new atlas.control.PitchControl(),
+				new atlas.control.CompassControl(),
+				new atlas.control.StyleControl({ mapStyles: 'all' })
+			], {
+				position: 'top-right'
+			});
+			
+				popup = new atlas.Popup();
+				map.popups.add(popup);
+			
+                //Create a data source and add it to the map.
+                datasource = new atlas.source.DataSource();
+                map.sources.add(datasource);
+				
+				clusterDs  = new atlas.source.DataSource(null, {
+                    cluster: true,
+                    clusterRadius: 150,
+                    clusterProperties: { 
+                        'Confirmed': ['+', ['get', 'Confirmed'], 1, 0],
+                        'Recovered': ['+', ['get', 'Recovered'], 1, 0],
+						'Deaths': ['+', ['get', 'Deaths'], 1, 0],
+						'Active': ['+', ['get', 'Active'], 1, 0]
+                    }
+                });
+				
+				map.sources.add(clusterDs);
 
-                fetch('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/03-03-2020.csv')
-				.then((response) => {
-					return response.text();
+                //Add a simple data layer for rendering the data.
+                bubbles = new atlas.layer.BubbleLayer(datasource, null, {
+					opacity: 0.75,
+					strokeWidth: 0,
+					filter: ['>', ['get','Confirmed'], 0]
+				});
+					
+				bubbles.setOptions(bubbleOptions.Confirmed);
+				map.layers.add(bubbles);
+				
+				map.events.add('click', bubbles, featureClicked);
+				map.events.add('mousemove', bubbles, hovered);
+				map.events.add('mouseout', bubbles, mouseOut);
+				
+				heatmap = new atlas.layer.HeatMapLayer(datasource, null, {
+                    opacity: 0.8,
+					visible: false,
+					filter: ['>', ['get','Confirmed'], 0]
+				});
+				
+				heatmap.setOptions(heatmapOptions.Confirmed);
+                map.layers.add(heatmap, 'labels');
+				
+				timeSeriesLayer = new atlas.layer.BubbleLayer(datasource, null, {
+					opacity: ['case',
+						['>', ['get',  '1&#x2F;22&#x2F;20', ['get',  'ConfirmedSeries']], 0],
+						0.75, 0
+					],
+					strokeWidth: 0,
+					color: 'dodgerblue',					
+					radius: [
+						'interpolate',
+						['linear'],
+						['get', '1&#x2F;22&#x2F;20', ['get',   'ConfirmedSeries']],
+						0, 4,
+						upperLimit, 40
+					],					
+					visible: false,
+					filter: ['>', ['get','Confirmed'], 0]
+				});
+				map.layers.add(timeSeriesLayer);
+				
+				 markerLayer = new HtmlMarkerLayer(clusterDs, null, {
+				 markerRenderCallback: function (id, position, properties) {
+                        return getPieChart(id, position, properties);
+                    },
+                    clusterRenderCallback: function (id, position, properties) {
+						var c = getPieChart(id, position, properties);
+						
+						return c;
+					},
+					visible: false
+				 });
+				 
+				  map.layers.add(markerLayer);
+
+				getData(function(data){
+					createChart(data);
+						
+					var d = currentDate.getDate();
+					var m = currentDate.getMonth() + 1;
+					var y= currentDate.getFullYear().toString().substr(-2);
+
+					 currentDateTxt = `${m}&#x2F;${d}&#x2F;${y}`;
+					 
+					 document.getElementById('DataLabel').innerHTML = '<br/><br/>Data last updated:<br/> ' + currentDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + 
+						'<br/><br/>Data complied by Johns Hopkins University (<a target="_blank" href="https://github.com/CSSEGISandData/COVID-19">GitHub</a>)';
+										
+					loadData('Confirmed').then(x=> {
+						loadData('Recovered').then(x=> {
+							loadData('Deaths').then(x=> {
+								document.getElementById('TimeOffset').setAttribute('max', timestamps.length - 1);
+							
+								 //Create an animation loop. 
+                                timer = new FrameAnimationTimer(function (progress, frameIdx) {
+                                    //Update layer.
+                                    //currentTimeStamp = timestamps[frameIdx];
+									
+									document.getElementById('TimeOffset').value = frameIdx;
+                                    timeSliderMoved();
+                                }, timestamps.length, timestamps.length * 500, true);
+							});
+						});
+					});
 				})
-				.then((data) => { 
+            });
+        }
+		
+		function timeSliderMoved(){
+			 var offset = document.getElementById('TimeOffset').value;
+			 currentTimeStamp = timestamps[offset];
+			 
+			 timer.setFrameIdx(offset);
+			 document.getElementsByClassName('timeControl-label')[0].innerHTML = currentTimeStamp;
+			 
+			 updateTimeSeriesLayer();
+		}
+
+		async function loadData(dataset){
+			var response = await fetch(`https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-${dataset}.csv`);
+			var data = await  response.text();
+			data = data.replace(/\//g, '&#x2F;');
+			
+			var r = await atlas.io.read(data);
+			
+			timeseriesData[dataset] = r.features;
+			
+			var f = r.features;
+			var id, p;
+			
+			for(var i=0;i<f.length;i++){
+				id = f[i].properties['Country&#x2F;Region'];
+				
+				if(f[i].properties['Province&#x2F;State']){
+					id += '|' + f[i].properties['Province&#x2F;State'];
+				}
+				
+				if(typeof summaryDataIdx[id] !== 'undefined'){
+					p = summaryData[summaryDataIdx[id]];
+				} else {
+					p = new atlas.data.Feature(f[i].geometry, {
+						 'Country&#x2F;Region': f[i].properties['Country&#x2F;Region'],
+						 'Province&#x2F;State': f[i].properties['Province&#x2F;State'],
+						_idx: i
+					});
+					
+					summaryDataIdx[id] = summaryData.length;
+					summaryData.push(p);				
+				}
+				
+				p.properties[dataset] = parseFloat(f[i].properties[currentDateTxt]);				
+
+				 //Extract the timestamps.
+				if(timestamps.length === 0 && dataset === 'Confirmed'){
+					var keys = Object.keys(f[i].properties);		
+					
+					for(var j=0;j<keys.length;j++){
+						if(dateRx.test(keys[j])){
+							f[i].properties[keys[j]] = parseFloat(f[i].properties[keys[j]]);
+							timestamps.push(keys[j]);
+						}
+					}		 
+				} else {
+					for(var j=0;j<timestamps.length;j++){
+						if(dateRx.test(timestamps[j])){
+							f[i].properties[timestamps[j]] = parseFloat(f[i].properties[timestamps[j]]);
+						}
+					}		 
+				}
+				
+				p.properties[dataset + 'Series'] = f[i].properties;
+			
+				if(dataset === 'Deaths'){
+					var prop =  summaryData[summaryDataIdx[id]].properties;
+					summaryData[summaryDataIdx[id]].properties.Active =prop.Confirmed - prop.Recovered - prop.Deaths;
+					
+					summaryData[summaryDataIdx[id]].properties.ActiveSeries = {};
+					
+					for(var j=0;j<timestamps.length;j++){
+						if(dateRx.test(timestamps[j])){
+							summaryData[summaryDataIdx[id]].properties.ActiveSeries[timestamps[j]] = prop.ConfirmedSeries[timestamps[j]] - prop.RecoveredSeries[timestamps[j]] - prop.DeathsSeries[timestamps[j]];
+						}
+					}	
+				 }
+			}
+			
+			if(dataset === 'Deaths'){
+				datasource.setShapes(summaryData);
+				clusterDs.setShapes(summaryData);
+			}
+		}
+		
+		function updateLayers(dataset){			
+			currentDataSet = dataset;
+						
+			timeSeriesLayer.setOptions(bubbleOptions[dataset]);		
+			bubbles.setOptions(bubbleOptions[dataset]);		
+			heatmap.setOptions(heatmapOptions[dataset]);
+			
+			updateTimeSeriesLayer();
+		}
+
+		function updateTimeSeriesLayer(){
+			var series = currentDataSet + 'Series';
+			
+			if(!currentTimeStamp && timestamps.length > 0){
+				currentTimeStamp = timestamps[0];
+			}
+			
+			if(currentTimeStamp){
+				timeSeriesLayer.setOptions({
+					radius: [
+						'interpolate',
+						['linear'],
+						['get', currentTimeStamp, ['get',  series]],
+						0, 4,
+						upperLimit, 40
+					],
+					opacity: ['case',
+						['>', ['get', currentTimeStamp, ['get',  series]], 0],
+						0.75, 0
+					]
+				});
+			}
+		}
+		
+		function selectLayer(layer){
+			if(!isPaused){
+				togglePlayPause();
+			}
+			
+			currentTimeStamp = timestamps[timestamps.length - 1];
+			
+			currentMapLayer = layer;
+			var showMarkers = false;
+			
+			document.getElementById('timeControl').style.display = (layer === 'timeseries')? '': 'none';
+			
+			switch(layer){
+				case 'bubbles':		
+					bubbles.setOptions({visible: true });
+					heatmap.setOptions({visible: false });
+					markerLayer.setOptions({visible: false });
+					timeSeriesLayer.setOptions({visible: false });
+					document.getElementById('legend').style.display = '';
+					break;
+				case 'heatmap':
+					bubbles.setOptions({visible: false });
+					heatmap.setOptions({visible: true });
+					markerLayer.setOptions({visible: false });
+					timeSeriesLayer.setOptions({visible: false });
+					document.getElementById('legend').style.display = 'none';
+					break;			
+				case 'piecharts':
+					bubbles.setOptions({visible: false });
+					heatmap.setOptions({visible: false });
+					markerLayer.setOptions({visible: true });
+					timeSeriesLayer.setOptions({visible: false });
+					document.getElementById('legend').style.display = 'none';
+					break;			
+				case 'timeseries':		
+					if(isPaused){
+						togglePlayPause();
+					}				
+					timeSeriesLayer.setOptions({visible: true });
+					bubbles.setOptions({visible: false });
+					heatmap.setOptions({visible: false });
+					markerLayer.setOptions({visible: false });
+					updateTimeSeriesLayer();					
+					document.getElementById('legend').style.display = '';
+					break;					
+			}
+			
+			closePopups();
+		}
+		
+		function hovered(){
+			map.getCanvasContainer().style.cursor = 'pointer';
+		}
+		
+		function mouseOut(){
+			map.getCanvasContainer().style.cursor = 'grab';
+		}
+		
+		function featureClicked(e, pixelOffset){
+			if (e.shapes && e.shapes.length > 0) {
+                var properties = e.shapes[0].getProperties();
+
+                popup.setOptions({
+                    //Update the content of the popup.
+                    content: atlas.PopupTemplate.applyTemplate(properties),
+
+                    //Update the position of the popup with the pins coordinate.
+                    position: e.shapes[0].getCoordinates(),
+					
+					pixelOffset: (pixelOffset)? pixelOffset: [0,0]
+                });
+
+                //Open the popup.
+                popup.open(map);
+            }
+		}
+		
+            const xlabels = [];
+            const yvalues = [];
+            var total = 0;
+		
+		function createChart(data){ 
 					data = data.replace(/\//g, '&#x2F;');
+					
                     var rows = data.split('\n').slice(1);
 
                     // top 10 countries
@@ -156,13 +726,13 @@
                     let countTotalCases = 0;
                     let sumTotalCases = 0;
                     var arr = parseCSV(data);
-
+					
                     for (let j=1; j < arr.length; j++) {
                         let rec = arr[j];
                         countTotalCases = parseInt(rec[3]);
                         sumTotalCases = sumTotalCases + countTotalCases;
                     }
-                    var ctx = document.getElementById('totalCases').innerHTML = 'Total Cases: ' + sumTotalCases.toLocaleString();
+                    var ctx = document.getElementById('totalCases').innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;Confirmed: ' + sumTotalCases.toLocaleString();
                     
                     // Total Recovered
                     let countTotalRecovered = 0;
@@ -173,7 +743,7 @@
                         countTotalRecovered = parseInt(rec[5]);
                         sumTotalRecovered = countTotalRecovered + sumTotalRecovered;
                     }
-                    var ctx = document.getElementById('totalRecov').innerHTML = 'Total Recovered: ' + sumTotalRecovered.toLocaleString();
+                    var ctx = document.getElementById('totalRecov').innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;Recovered: ' + sumTotalRecovered.toLocaleString();
 
 
                     // Total Deaths
@@ -185,28 +755,32 @@
                         countTotalDeaths = parseInt(rec[4]);
                         sumTotalDeaths = countTotalDeaths + sumTotalDeaths;
                     }
-                    var ctx = document.getElementById('totalDeaths').innerHTML = 'Total Deaths: ' + sumTotalDeaths.toLocaleString();
+                    var ctx = document.getElementById('totalDeaths').innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;Deaths: ' + sumTotalDeaths.toLocaleString();
+					
+					  var ctx = document.getElementById('totalActive').innerHTML = '&nbsp;&nbsp;&nbsp;&nbsp;Active: ' + (sumTotalCases - sumTotalRecovered- sumTotalDeaths).toLocaleString();
 
                     // Chart
                     var ctx = document.getElementById('chart').getContext('2d');
                     //ctx.style.backgroundColor = 'rgba(50,50,50,255)';
                     var chart = new Chart(ctx, {
                         type: 'horizontalBar',   
-                        backgroundColor: 'rgb(100,100,100, 0.1)',  
+                        backgroundColor: '#343740',
                         data: {
                             labels: xlabels,
                             datasets: [
                                 {
                                     data: yvalues,
-                                    backgroundColor: 'rgb(255,99,132,0.5)'
+                                    backgroundColor: 'dodgerblue'
                                 }
                             ]   
                         },
                         options: {
+							maintainAspectRatio: false,
                             title: {
                                 display: true,
-                                fontSize: 15,
-                                text: 'Top 10 Confirmed Cases by Province/State'
+                                fontSize: 14,
+                                text: 'Top 10 Confirmed Cases by Province/State',
+								fontColor: 'white'
                             },
                             legend: {
                                 display: false
@@ -214,51 +788,49 @@
                             scales: {
                                 yAxes: [{
                                     ticks: {
-                                        fontSize: 20
+                                        fontSize: 20,
+										fontColor: 'white'
                                     }
                                 }]
                             }
                         }
                     });    
-                });
+		}
+		
+		function getData(callback){
+			currentDate = new Date();
+			currentDate.setDate(currentDate.getDate() + dateOffset);
+		
+			 fetch(`https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/${getPaddedDate(currentDate)}.csv`)
+					.then((response) => {
+						return response.text();
+					})
+					.then((data) => { 
+						callback(data);
+					}).catch(x => {
+						dateOffset--;
+						getData(callback);
+					});		
+		}
 
-                //Create a data source and add it to the map.
-                datasource = new atlas.source.DataSource();
-                map.sources.add(datasource);
-
-                //Add a simple data layer for rendering the data.
-                layer = new atlas.layer.SimpleDataLayer(datasource);
-
-                map.layers.add(new atlas.layer.HeatMapLayer(datasource, null, {
-                    radius: 10,
-                    opacity: 0.8
-                    }), 'labels');
-
-				//Workaround: fetcht he data and replace all "/" values with their escaped version so that they don't get read as paths.				
-				fetch('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv')
-				.then((response) => {
-					return response.text();
-				})
-				.then((data) => { 
-					data = data.replace(/\//g, '&#x2F;');
-
-					//Read an XML file from a URL or pass in a raw XML string.
-					atlas.io.read(data).then(r => {
-						if (r) {
-							//Add the feature data to the data source.
-							datasource.add(r);
-
-							//If bounding box information is known for data, set the map view to it.
-							if (r.bbox) {
-								//map.setCamera({ bounds: r.bbox, padding: 50 });
-							}
-						}
-					});
-				});
-            });
-        }
-
+		function getPaddedDate(date){
+			var d = currentDate.getDate();
+			var m = currentDate.getMonth() + 1;
+			var y= currentDate.getFullYear();
+			
+			if(d < 10){
+				d = '0' + d;
+			}
+			
+			if(m < 10){
+				m = '0' + m;
+			}
+		
+			return`${m}-${d}-${y}`;
+		}
+		
         function parseCSV(str) {
+
             var arr = [];
             var quote = false;  // true means we're inside a quoted field
 
@@ -293,32 +865,171 @@
             }
             return arr;
 }
-    </script>
-</head>
 
-<body onload="GetMap()">
-    <body>
-        <div class="grid">  
-            <header class="grid_header">
-                <h1>Coronavirus COVID-19 Confirmed Worldwide Cases</h1>
-            </header>
-            <main class="grid_main">
-                <div class="column right" id="myMap" style="background-color:#bbb;"></div>
-            </main>
-            <aside class="grid_left">
-                <canvas class="column left" id="chart" style="background-color: rgb(22, 21, 21);" height="1000" ></canvas>
-            </aside>
-            <aside class="grid_right">
-              <p id="totalCases" >Total Cases:</p>
-              <p id="totalRecov" >
-                  Total Recovered:</p>
-                  <p id="totalDeaths" >
-                    Total Deaths:</p>
-            </aside>
-           <!-- <footer class="grid_footer">
-              <p></p>
-            </footer> -->
-          </div> 
-      </body>
+		
+		function getPieChart(id, position, properties) {
+			var radius = 20;
+
+			if (properties.Confirmed > 10000) {
+				radius = 60;
+			}else if (properties.Confirmed > 1000) {
+				radius = 50;
+			} else if (properties.Confirmed > 100) {
+				radius = 40;
+			} else if (properties.Confirmed > 10) {
+				radius = 30;
+			}
+
+			//Get the counts for each entity type in the cluster.
+			var values = [0, 0, 0];
+
+			var values = [
+				properties.Confirmed,
+				properties.Recovered,
+				properties.Deaths
+			];
+
+			var cluster = new PieChartMarker({
+				position: position,
+				values: values,
+				colors: entityTypesColors,
+				radius: radius, 
+				strokeThickness: 1,
+				strokeColor: 'white',
+				innerRadius: (properties.cluster)? radius * 0.5: 0.01,
+				text:  (properties.cluster)? properties.point_count_abbreviated: '',
+				visible: properties.Confirmed > 0
+			}, tooltipCallback);
+
+			properties._pixelOffset =  [0, -radius*1.3]
+			
+			if(!properties.cluster){
+				cluster.properties._idx = properties.idx;
+			}
+			
+			addEvent('click', cluster, markerClicked);
+
+			return cluster;
+		}
+
+		function closePopups(){
+			popup.close();
+		}
+		
+        function markerClicked(eventType, marker) {
+            if (marker.properties.cluster) {
+                //Get the cluster expansion zoom level. This is the zoom level at which the cluster starts to break apart.
+                clusterDs.getClusterExpansionZoom(marker.properties.cluster_id).then(function (zoom) {
+
+                    //Update the map camera to be centered over the cluster.
+                    map.setCamera({
+                        center: marker.getOptions().position,
+                        zoom: zoom,
+                        type: 'ease',
+                        duration: 200
+                    });
+                });
+            } else {
+				var s = datasource.getShapes()[marker.properties._idx];
+				featureClicked({shapes:[s]}, marker.properties._pixelOffset);
+			}
+        }
+
+        function tooltipCallback(marker, sliceIdx) {
+            return legend[sliceIdx] + '<br/>' + marker.getSliceValue(sliceIdx) + ' (' + marker.getSlicePercentage(sliceIdx) + '%)';
+        }
+        
+		function addEvent(eventType, marker, handler) {
+            if (eventType && marker && handler) {
+                var options = marker.getOptions();
+                var html = options.htmlContent;
+                var elm = html;
+
+                if (typeof html === 'string') {
+                    elm = document.createElement('div');
+                    elm.innerHTML = html.replace(/{color}/g, options.color || "")
+                        .replace(/{text}/g, options.text || "");
+                    marker.setOptions({ htmlContent: elm });
+                }
+
+                elm.style.cursor = 'pointer';
+
+                elm['on' + eventType] = function () {
+                    handler(eventType, marker);
+                };
+            }
+        }
+		
+		var timer, isPaused = true;
+		
+	   function togglePlayPause() {
+            if (isPaused) {
+                timer.play();
+				document.getElementById('playPauseBtn').value = ' || ';
+            } else {
+                timer.pause();
+				document.getElementById('playPauseBtn').value = '►';
+            }
+
+            isPaused = !isPaused;
+        }
+
+        function FrameAnimationTimer(renderFrameCallback, numFrames, duration, loop) {
+            var _timerId,
+                frameIdx = 0,
+                _isPaused = false;
+
+            duration = (duration && duration > 0) ? duration : 1000;
+
+            delay = duration / (numFrames - 1);
+
+            this.play = function () {
+                if (renderFrameCallback) {
+                    if (_timerId) {
+                        _isPaused = false;
+                    } else {
+                        _timerId = setInterval(function () {
+                            if (!_isPaused) {
+                                var progress = (frameIdx * delay) / duration;
+
+                                renderFrameCallback(progress, frameIdx);
+
+                                if (progress >= 1) {
+                                    if (loop) {
+                                        frameIdx = 0;
+                                    } else {
+                                        reset();
+                                    }
+                                }
+
+                                frameIdx++;
+                            }
+                        }, delay);
+                    }
+                }
+            };
+
+            this.pause = function () {
+                _isPaused = true;
+            };
+
+            this.stop = function () {
+                reset();
+            };
+
+			this.setFrameIdx = function(idx) {
+				frameIdx = idx;
+			};
+			
+            function reset() {
+                if (_timerId != null) {
+                    clearInterval(_timerId);
+                }
+
+                frameIdx = 0;
+                _isPaused = false;
+            }
+        };
+	</script>
 </body>
 </html>
