@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Coronavirus COVID-19 Dashboard</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="Coronovirus COVID-19 Dashboard" />
+    <meta name="keywords" content="Coronovirus Covid Covid-19" />
+    <meta name="author" content="Microsoft Azure Maps" />
+
+    <link rel="stylesheet" href="index.css" type="text/css" />
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.css" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/d3/5.7.0/d3.min.js">
+</head>
+<body onload="GetMap()">
+    <div class="header">
+        <h1>Coronavirus COVID-19 Confirmed Worldwide Cases</h1>
+    </div>
+
+    <div class="chartArea">
+        <canvas id="chart"></canvas>
+    </div>
+
+    <div id="myMap"></div>
+
+    <div class="controlArea">
+        <h2 class="timeControl-label"></h2>
+
+        <div class="boxWrapper">
+            <div class="timeBox">
+                <input id="playPauseBtn" type="button" value="&#9658;" onclick="togglePlayPause()" />
+                <input type="range" id="timeSlider" value="15" min="0" max="15" step="1" onchange="timeSliderMoved()" oninput="timeSliderMoved()" />
+            </div>
+        </div>
+
+        <div class="boxWrapper">
+            <div class="controlBox">
+                <div class="sideBox" id="metricTotals"></div>
+
+                <div class="sideBox">
+                    <h3>Metric</h3>
+                    <label style="color:dodgerblue">
+                        <input type="radio" checked="checked" name="dataLayers" onclick="updateLayers('Confirmed')">Confirmed
+                    </label><br />
+                    <label style="color:limegreen">
+                        <input type="radio" name="dataLayers" onclick="updateLayers('Recovered')">Recovered
+                    </label><br />
+                    <label style="color:red">
+                        <input type="radio" name="dataLayers" onclick="updateLayers('Deaths')">Deaths
+                    </label><br />
+                    <label style="color:darkorange">
+                        <input type="radio" name="dataLayers" onclick="updateLayers('Active')">Active
+                    </label>
+                </div>
+
+                <div class="sideBox">
+                    <h3>Map layer</h3>
+                    <input type="radio" checked="checked" name="mapLayers" onclick="selectLayer('bubbles')">Bubbles<br />
+                    <input type="radio" name="mapLayers" onclick="selectLayer('heatmap')">Heat map<br />
+                    <input type="radio" name="mapLayers" onclick="selectLayer('piecharts')">Pie charts
+                </div>
+
+                <div id="legend" class="sideBox">
+                    <h3>Legend</h3>
+                    <svg height="100" width="100" id="bubbleLegend" aria-label="Bubble layer legend">
+                        <circle cx="50" cy="59" r="40" stroke="white" stroke-width="1" class="bubbleFill" fill="dodgerblue" />
+                        <circle cx="50" cy="77" r="22" stroke="white" stroke-width="1" class="bubbleFill" fill="dodgerblue" />
+                        <circle cx="50" cy="94" r="5" stroke="white" stroke-width="1" class="bubbleFill" fill="dodgerblue" />
+                        <text x="28" y="15" class="legendText">10,000+</text>
+                        <text x="32" y="50" class="legendText">5,000</text>
+                        <text x="37" y="85" class="legendText">&lt;10</text>
+                    </svg>
+
+                    <img id="heatGradientLegend" src="images/heatGradient.png"title="Heat map gradient legend" style="display:none" />
+
+                    <svg height="132" width="112" id="pieLegend" style="display:none" aria-label="Pie chart legend">
+                        <circle cx="56" cy="76" r="55" stroke="white" stroke-width="1" class="bubbleFill" fill="dodgerblue" />
+                        <circle cx="56" cy="91" r="40" stroke="white" stroke-width="1" class="bubbleFill" fill="dodgerblue" />
+                        <circle cx="56" cy="106" r="25" stroke="white" stroke-width="1" class="bubbleFill" fill="dodgerblue" />
+                        <text x="30" y="15" class="legendText">10,000+</text>
+                        <text x="30" y="45" class="legendText">&lt;10,000</text>
+                        <text x="34" y="75" class="legendText">&lt;1,000</text>
+                    </svg>
+                </div>
+            </div>
+                <div id="dataLabel"></div>
+            </div>
+    </div>
+
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+
+    <!-- Add reference to the Azure Maps Spatial IO module. -->
+    <script src="https://atlas.microsoft.com/sdk/javascript/spatial/0/atlas-spatial.min.js"></script>
+
+    <script src="scripts/PieChartMarker.js"></script>
+    <script src="scripts/HtmlMarkerLayer.js"></script>
+    <script src="scripts/rangetouch.js"></script>
+
+    <script src="scripts/index.js"></script>
+</body>
+</html>

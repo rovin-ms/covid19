@@ -5,6 +5,7 @@ class HtmlMarkerLayer extends atlas.layer.BubbleLayer {
     /*********************
      * Constructor
      *********************/
+
     /**
     * Constructs a new HtmlMarkerLayer.
     * @param source The id or instance of a data source which the layer will render.
@@ -106,6 +107,11 @@ class HtmlMarkerLayer extends atlas.layer.BubbleLayer {
             this.updateMarkers();
         }
         super.setOptions(newBaseOptions);
+    }
+
+    update() {
+        this.clearCache(true);
+        this.updateMarkers();
     }
     /***************************
      * Public override methods
@@ -260,9 +266,3 @@ class HtmlMarkerLayer extends atlas.layer.BubbleLayer {
         }
     }
 }
-/**
- * //TODO: Future improvements
- *  - Add support for layer level events
- *  - Add support for points in shapes (i.e. polygons), similar to how symbol layer works.
- */ 
-//# sourceMappingURL=HtmlMarkerLayer.js.map
