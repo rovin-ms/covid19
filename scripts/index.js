@@ -23,7 +23,7 @@ var chart;
 var dateRx = /[0-9]+\&\#x2F;[0-9]+\&\#x2F;[0-9]+/;
 
 //Pie chart legend.
-var legend = ['Confirmed', 'Recovered', 'Deaths'];
+var legend = ['Recovered', 'Deaths', 'Active'];
 
 //The max value used for scaling bubbles. 
 var upperLimit = 10000;
@@ -56,6 +56,11 @@ function GetMap() {
     //Initialize a map instance.
     map = new atlas.Map('myMap', {
         style: "grayscale_dark",
+
+        language: 'en-US',
+        view: 'Auto',
+
+
         //Add your Azure Maps subscription key to the map SDK. Get an Azure Maps key at https://azure.com/maps
         authOptions: {
             authType: 'subscriptionKey',
@@ -480,17 +485,19 @@ function createPieChartMarker(position, properties) {
     //Set the max radius to 50. 
     var radius = 50;
 
-    var c, r, d;
+    var a, c, r, d;
 
     //Get the selected time series data for the marker. 
     if (properties.cluster) {
         c = properties['ConfirmedSeries|' + selectedTimeStamp];
         r = properties['RecoveredSeries|' + selectedTimeStamp];
         d = properties['DeathsSeries|' + selectedTimeStamp];
+        a = properties['ActiveSeries|' + selectedTimeStamp];
     } else {
         c = properties['ConfirmedSeries'][selectedTimeStamp];
         r = properties['RecoveredSeries'][selectedTimeStamp];
         d = properties['DeathsSeries'][selectedTimeStamp];
+        a = properties['ActiveSeries'][selectedTimeStamp];
     }
 
     //Get the selected metric value.
@@ -503,7 +510,7 @@ function createPieChartMarker(position, properties) {
             m = d;
             break;
         case 'Active':
-            m = c - r - d;
+            m = a;
             break;
     }
 
@@ -516,15 +523,15 @@ function createPieChartMarker(position, properties) {
 
     //Retrieve the pie slice colors. Align with bubble layer colors for the metrics.
     var legendColors = [
-        bubbleOptions['Confirmed'].color,
         bubbleOptions['Recovered'].color,
-        bubbleOptions['Deaths'].color
+        bubbleOptions['Deaths'].color,
+        bubbleOptions['Active'].color
     ];
 
     //Create the pie chart marker. Add a callback for a tooltip.
     var marker = new PieChartMarker({
         position: position,
-        values: [c, r, d],
+        values: [r, d, a],
         colors: legendColors,
         radius: radius,
         strokeThickness: 1,
