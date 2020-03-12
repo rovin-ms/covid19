@@ -1,0 +1,279 @@
+﻿html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    color: white;
+    font-family: Arial;
+    overflow-x: hidden;
+}
+
+#myMap {
+    position: relative;
+    float: left;
+    width: calc(100% - 546px);
+    height: calc(100vh - 75px);
+    background-color: #343740;
+    min-width: 350px;
+    min-height: 185px;
+    background-color: black;
+}
+
+h1 {
+    font-size: 40px;
+    font-weight: normal;
+    color: white;
+    text-align: center;
+    margin: 0;
+    padding-top: 10px;
+}
+
+h3 {
+    font-size: 16px;
+}
+
+title {
+    text-align: center;
+}
+
+.header {
+    width: 100vw;
+    height: 72px;
+    background-color: #343740;
+    margin-bottom: 3px;
+}
+
+.chartArea {
+    float: left;
+    width: 330px;
+    height: calc(100vh - 75px);
+    padding: 0 10px;
+    background-color: #343740;
+    margin-right: 3px;
+}
+
+.controlArea {
+    float: left;
+    width: 180px;
+    height: calc(100vh - 75px);
+    font-size: 14px;
+    font-family: Arial, Helvetica, sans-serif;
+    vertical-align: top;
+    font-weight: normal;
+    color: white;
+    background-color: #343740;
+    margin-left: 3px;
+    padding-left: 10px;
+}
+
+.boxWrapper {
+    width: 100%;
+    float: left;
+    text-align: center;
+}
+
+.sideBox {
+    width: 140px;
+    float: left;
+    margin-left:10px;
+}
+
+#dataLabel {
+    width: calc(100% - 10px);
+    font-size: 12px;
+    margin-left: 0;
+    float: left;
+}
+
+.customPopup {
+    padding: 10px;
+    color: black;
+    min-width: 100px;
+}
+
+a:link, a:visited, a:active {
+    color: dodgerblue;
+}
+
+a:hover {
+    color: yellow;
+}
+
+.timeControl-label {
+    margin-left: 10px;
+    text-align:center;
+}
+
+.legendText {
+    font-size: 14px;
+    fill: white;
+}
+
+#playPauseBtn {
+    float: left;
+}
+
+#timeSlider {
+    float: left;
+    width: calc(100% - 50px);
+    min-width: 100px;
+    max-width: 250px;
+    vertical-align: middle;
+    margin-left: 10px;
+}
+
+/* Custom range slider style */
+input[type=range] {
+    display: block;
+    height: 20px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    border: none;
+    background: 0 0
+}
+
+    input[type=range]::-webkit-slider-runnable-track {
+        height: 6px;
+        background: white;
+        border: 0;
+        border-radius: 3px;
+        -webkit-user-select: none;
+        user-select: none
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        margin-top: -7px;
+        position: relative;
+        height: 20px;
+        width: 20px;
+        background: linear-gradient(to left top,#00bd9c,#0081c5);
+        border: 3px solid #fff;
+        border-radius: 100%;
+        -webkit-transition: background .3s ease;
+        transition: background .3s ease;
+        box-shadow: 0 1px 2px rgba(52,63,74,.4);
+        box-sizing: border-box
+    }
+
+    input[type=range]::-moz-range-track {
+        height: 6px;
+        background: white;
+        border: 0;
+        border-radius: 3px;
+        user-select: none
+    }
+
+    input[type=range]::-moz-range-thumb {
+        position: relative;
+        height: 20px;
+        width: 20px;
+        background: linear-gradient(to left top,#00bd9c,#0081c5);
+        border: 3px solid #fff;
+        border-radius: 100%;
+        -moz-transition: background .3s ease;
+        transition: background .3s ease;
+        box-shadow: 0 1px 2px rgba(52,63,74,.4);
+        box-sizing: border-box
+    }
+
+    input[type=range]::-moz-focus-outer {
+        border: 0
+    }
+
+    input[type=range]::-ms-track {
+        height: 6px;
+        background: 0 0;
+        border: 0;
+        color: transparent
+    }
+
+    input[type=range]::-ms-fill-lower, input[type=range]::-ms-fill-upper {
+        height: 6px;
+        background: white;
+        border: 0;
+        border-radius: 3px;
+        -ms-user-select: none;
+        user-select: none
+    }
+
+    input[type=range]::-ms-thumb {
+        position: relative;
+        height: 20px;
+        width: 20px;
+        background: linear-gradient(to left top,#00bd9c,#0081c5);
+        border: 3px solid #fff;
+        border-radius: 100%;
+        -ms-transition: background .3s ease;
+        transition: background .3s ease;
+        box-shadow: 0 1px 2px rgba(52,63,74,.4);
+        box-sizing: border-box;
+        margin-top: 0
+    }
+
+    input[type=range]::-ms-tooltip {
+        display: none
+    }
+
+    input[type=range]:focus {
+        outline: thin dotted #343f4a;
+        outline-offset: 1px
+    }
+   
+/* Responsive styles based on screen size. */
+@media screen and (max-width: 950px) {
+    .chartArea {
+        display: none;
+    }
+
+    #myMap {
+        width: calc(100vw - 193px);
+    }
+
+    h1 {
+        font-size: 30px;
+    }
+}
+
+@media screen and (max-width: 800px), (max-height: 800px) {
+    h1 {
+        font-size: 25px;
+    }
+
+    .chartArea {
+        display: none;
+    }
+
+    .controlArea {
+        width: calc(100vw - 10px);
+        margin-top: 3px;
+        margin-left: 0;
+        min-height: 320px;
+        height: auto;
+    }
+
+    #myMap {
+        width: 100vw;
+        height: calc(100vh - 175px);
+    }
+
+    .timeBox {
+        width: 300px;
+        margin: auto;
+    }
+
+    .controlBox {
+        min-width: 300px;
+        max-width: 600px;
+        margin: auto;
+    }
+
+    .sideBox {
+        min-height: 130px;
+    }
+}
