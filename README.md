@@ -7,7 +7,8 @@
 This map shows the worldwide location of Coronavirus COVID-19 outbreak. The data the maps consumes comes from [Novel Coronavirus (COVID-19) Cases, provided by JHU CSSE](https://github.com/CSSEGISandData/COVID-19). We do not own the data source and suggest using any data source of your choice.
 
 The map is based on [Microsoft Azure Maps](https://azure.microsoft.com/services/azure-maps/). **You must obtain an Azure Maps key in order to display the map. 
-See the instructions at the beginning of this tutorial [here](https://docs.microsoft.com/azure/azure-maps/quick-demo-map-app).** 
+See the instructions at the beginning of this tutorial [here](https://docs.microsoft.com/azure/azure-maps/quick-demo-map-app).** Add your key to the top of the *scripts/index.html* file where it says `'<Your Azure Maps Key>'`.
+
 This project uses the Azure Maps Web SDK which primarily uses map tiles from Azure Maps. Azure Maps provides a generous volume of free usage under the S0 SKU (250,000 transactions a month), which will likely be more than enough for majority of scenarios using this dashboard. 
 A trial subscription for Azure can also be created to receive an additional $200 in Azure credits for 30 days (~400,000 more transactions with Azure Maps).
 
