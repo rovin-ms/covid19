@@ -1,4 +1,9 @@
-﻿//Map, data sources, layers and popup variables.
+﻿
+//Add your Azure Maps subscription key to the map SDK. Get an Azure Maps key at https://azure.com/maps
+var azureMapsKey = '<Your Azure Maps Key>';
+
+
+//Map, data sources, layers and popup variables.
 var map, dataSource, clusterDataSource, bubbleLayer, heatMapLayer, popup;
 
 //Parsed aggregated features.
@@ -64,7 +69,7 @@ function GetMap() {
         //Add your Azure Maps subscription key to the map SDK. Get an Azure Maps key at https://azure.com/maps
         authOptions: {
             authType: 'subscriptionKey',
-            subscriptionKey: '<Your Azure Maps Key>'
+            subscriptionKey: azureMapsKey
         }
     });
 
