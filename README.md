@@ -1,5 +1,7 @@
 # Coronavirus COVID-19 Dashboard
 
+[Try it out](https://rbrundritt.azurewebsites.net/demos/covid19)
+
 <img src="images\snapshot.png" width="540" height="380"  />
 
 ## Overview

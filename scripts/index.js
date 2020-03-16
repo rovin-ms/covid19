@@ -103,8 +103,7 @@ function GetMap() {
         //Create a heat map layer. Only show features that have confirmed cases. 
         heatMapLayer = new atlas.layer.HeatMapLayer(dataSource, null, {
             opacity: 0.8,
-            visible: false,
-            filter: ['>', ['get', 'Confirmed'], 0]
+            visible: false
         });
         map.layers.add(heatMapLayer, 'labels');
 
@@ -232,7 +231,7 @@ async function loadData(metric) {
         if (typeof summaryDataIdx[id] !== 'undefined') {
             //If it has, retrieve the feature.
             f = summaryData[summaryDataIdx[id]];
-        } else {
+        } else if(metric === 'Confirmed') {
             //Create a feature using the geometry, Country/Region and Province/State properties.
             f = new atlas.data.Feature(r.features[i].geometry, {
                 'Country&#x2F;Region': r.features[i].properties['Country&#x2F;Region'],
@@ -244,44 +243,51 @@ async function loadData(metric) {
             summaryData.push(f);
         }
 
-        //Extract the timestamps from the first row of the first data set.
-        if (timestamps.length === 0 && metric === 'Confirmed') {
-            var keys = Object.keys(r.features[i].properties);
+        if (f) {
+            //Extract the timestamps from the first row of the first data set.
+            if (timestamps.length === 0 && metric === 'Confirmed') {
+                var keys = Object.keys(r.features[i].properties);
 
-            for (j = 0; j < keys.length; j++) {
-                if (dateRx.test(keys[j])) {
-                    //Parse the time series data as a float.
-                    val = r.features[i].properties[keys[j]];
-                    r.features[i].properties[keys[j]] = (!val || val === '')? 0: parseFloat(val);
-                    timestamps.push(keys[j]);
+                for (j = 0; j < keys.length; j++) {
+                    if (dateRx.test(keys[j])) {
+                        //Parse the time series data as a float.
+                        val = r.features[i].properties[keys[j]];
+                        r.features[i].properties[keys[j]] = (!val || val === '') ? 0 : parseFloat(val);
+                        timestamps.push(keys[j]);
+                    }
+                }
+
+                //Time stamp data in the metric data set is ordered such that the last date is the most current.
+                //Capture the most current date in the data set.
+                selectedTimeStamp = timestamps[timestamps.length - 1];
+            } else {
+                //Parse the time series data as a float.
+                for (j = 0; j < timestamps.length; j++) {
+                    if (dateRx.test(timestamps[j])) {
+                        val = r.features[i].properties[timestamps[j]];
+                        r.features[i].properties[timestamps[j]] = (!val || val === '') ? 0 : parseFloat(val);
+                    }
                 }
             }
 
-            //Time stamp data in the metric data set is ordered such that the last date is the most current.
-            //Capture the most current date in the data set.
-            selectedTimeStamp = timestamps[timestamps.length - 1];
-        } else {
-            //Parse the time series data as a float.
-            for (j = 0; j < timestamps.length; j++) {
-                if (dateRx.test(timestamps[j])) {
-                    val = r.features[i].properties[timestamps[j]];
-                    r.features[i].properties[timestamps[j]] = (!val || val === '') ? 0 : parseFloat(val);
-                }
-            }
-        }
+            //Capture the metric time-series data.
+            f.properties[metric + 'Series'] = r.features[i].properties;
 
-        //Capture the metric time-series data.
-        f.properties[metric + 'Series'] = r.features[i].properties;
-
-        //When on the last data set, calculate aggregates.
-        if (metric === 'Deaths') {
             var prop = summaryData[summaryDataIdx[id]].properties;
 
-            //Calculate the number of Active cases in the series.
-            summaryData[summaryDataIdx[id]].properties.ActiveSeries = {};
+            //If there is no confirmed cases, remove the feature.
+            if (metric === 'Confirmed' && prop.ConfirmedSeries[timestamps[timestamps.length - 1]] === 0) {
+                summaryData.pop();
+            } else {
+                //When on the last data set, calculate aggregates. 
+                if (metric === 'Deaths') {
+                    //Calculate the number of Active cases in the series.
+                    summaryData[summaryDataIdx[id]].properties.ActiveSeries = {};
 
-            for (j = 0; j < timestamps.length; j++) {
-                summaryData[summaryDataIdx[id]].properties.ActiveSeries[timestamps[j]] = prop.ConfirmedSeries[timestamps[j]] - prop.RecoveredSeries[timestamps[j]] - prop.DeathsSeries[timestamps[j]];
+                    for (j = 0; j < timestamps.length; j++) {
+                        summaryData[summaryDataIdx[id]].properties.ActiveSeries[timestamps[j]] = prop.ConfirmedSeries[timestamps[j]] - prop.RecoveredSeries[timestamps[j]] - prop.DeathsSeries[timestamps[j]];
+                    }
+                }
             }
         }
     }
