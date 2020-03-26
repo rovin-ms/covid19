@@ -49,6 +49,8 @@ var bubbleOptions = {
     }
 };
 
+var emptyTimeSeries = {};
+
 //Run the range touch code to make the slider more user friendly with touch.
 RangeTouch.setup('#timeSlider');
 
@@ -103,8 +105,7 @@ function GetMap() {
         //Create a heat map layer. Only show features that have confirmed cases. 
         heatMapLayer = new atlas.layer.HeatMapLayer(dataSource, null, {
             opacity: 0.8,
-            visible: false,
-            filter: ['>', ['get', 'Confirmed'], 0]
+            visible: false
         });
         map.layers.add(heatMapLayer, 'labels');
 
@@ -174,7 +175,7 @@ function GetMap() {
 
             //Add data copyrights and last updated date.
             document.getElementById('dataLabel').innerHTML = '<br/><br/>Data last updated: ' + currentDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) +
-                '<br/><br/>Data © Johns Hopkins University (<a target="_blank" href="https://github.com/CSSEGISandData/COVID-19">GitHub</a>)';
+                '<br/><br/>Data © Johns Hopkins University (<a target="_blank" href="https://github.com/CSSEGISandData/COVID-19">GitHub</a>)<br/><br/>Disclaimer: This site is for demonstrative purposes only. It is an open source project hosted on <a href="https://github.com/rovin-ms/covid19">Github</a>.';
 
             loadData('Recovered').then(x => {
                 loadData('Deaths').then(x => {
@@ -205,7 +206,7 @@ function GetMap() {
 
 async function loadData(metric) {
     //Featch the time series data from the specified metric.
-    var response = await fetch(`https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-${metric}.csv`);
+    var response = await fetch(`https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_${metric.toLowerCase()}_global.csv`);
 
     //Read the data as text.
     var data = await response.text();
@@ -233,61 +234,116 @@ async function loadData(metric) {
             //If it has, retrieve the feature.
             f = summaryData[summaryDataIdx[id]];
         } else {
+
             //Create a feature using the geometry, Country/Region and Province/State properties.
             f = new atlas.data.Feature(r.features[i].geometry, {
                 'Country&#x2F;Region': r.features[i].properties['Country&#x2F;Region'],
                 'Province&#x2F;State': r.features[i].properties['Province&#x2F;State']
             });
 
+            if (timestamps && metric !== 'Confirmed') {
+                if (!emptyTimeSeries) {
+                    timestamps.forEach(t => {
+                        emptyTimeSeries[t] = 0;
+                    });
+                }
+
+                f.properties.ConfirmedSeries = emptyTimeSeries;
+
+                if (metric !== 'Recovered') {
+                    f.properties.RecoveredSeries = emptyTimeSeries;
+                }
+            }
+
             //Use the features index in the array as the lookup value in the index in the lookup table.
             summaryDataIdx[id] = summaryData.length;
             summaryData.push(f);
         }
 
-        //Extract the timestamps from the first row of the first data set.
-        if (timestamps.length === 0 && metric === 'Confirmed') {
-            var keys = Object.keys(r.features[i].properties);
+        if (f) {
+            //Extract the timestamps from the first row of the first data set.
+            if (timestamps.length === 0 && metric === 'Confirmed') {
+                var keys = Object.keys(r.features[i].properties);
 
-            for (j = 0; j < keys.length; j++) {
-                if (dateRx.test(keys[j])) {
-                    //Parse the time series data as a float.
-                    val = r.features[i].properties[keys[j]];
-                    r.features[i].properties[keys[j]] = (!val || val === '')? 0: parseFloat(val);
-                    timestamps.push(keys[j]);
+                for (j = 0; j < keys.length; j++) {
+                    if (dateRx.test(keys[j])) {
+                        //Parse the time series data as a float.
+                        val = r.features[i].properties[keys[j]];
+                        r.features[i].properties[keys[j]] = (!val || val === '') ? 0 : parseFloat(val);
+                        timestamps.push(keys[j]);
+                    }
+                }
+
+                //Time stamp data in the metric data set is ordered such that the last date is the most current.
+                //Capture the most current date in the data set.
+                selectedTimeStamp = timestamps[timestamps.length - 1];
+            } else {
+                var max = 0;
+
+                //Parse the time series data as a float.
+                for (j = 0; j < timestamps.length; j++) {
+                    if (dateRx.test(timestamps[j])) {
+                        val = r.features[i].properties[timestamps[j]];
+
+                        if (!val || val === '') {
+                            val = r.features[i].properties[timestamps[j] + '20'];
+                        }
+
+                        var v = (!val || val === '') ? 0 : parseFloat(val);
+
+                        if (v > max) {
+                            max = v;
+                        }
+
+                        r.features[i].properties[timestamps[j]] = max;
+                    }
                 }
             }
 
-            //Time stamp data in the metric data set is ordered such that the last date is the most current.
-            //Capture the most current date in the data set.
-            selectedTimeStamp = timestamps[timestamps.length - 1];
-        } else {
-            //Parse the time series data as a float.
-            for (j = 0; j < timestamps.length; j++) {
-                if (dateRx.test(timestamps[j])) {
-                    val = r.features[i].properties[timestamps[j]];
-                    r.features[i].properties[timestamps[j]] = (!val || val === '') ? 0 : parseFloat(val);
-                }
-            }
-        }
-
-        //Capture the metric time-series data.
-        f.properties[metric + 'Series'] = r.features[i].properties;
-
-        //When on the last data set, calculate aggregates.
-        if (metric === 'Deaths') {
-            var prop = summaryData[summaryDataIdx[id]].properties;
-
-            //Calculate the number of Active cases in the series.
-            summaryData[summaryDataIdx[id]].properties.ActiveSeries = {};
-
-            for (j = 0; j < timestamps.length; j++) {
-                summaryData[summaryDataIdx[id]].properties.ActiveSeries[timestamps[j]] = prop.ConfirmedSeries[timestamps[j]] - prop.RecoveredSeries[timestamps[j]] - prop.DeathsSeries[timestamps[j]];
-            }
+            //Capture the metric time-series data.
+            f.properties[metric + 'Series'] = r.features[i].properties;
         }
     }
 
     //When on last metric data set, generate cluster aggregates and pass the aggregated data into the data sources.
     if (metric === 'Deaths') {
+        //Ensure all features have all series data.
+        Object.keys(summaryDataIdx).forEach(x => {
+            if (typeof summaryData[summaryDataIdx[x]].properties['ConfirmedSeries'] === 'undefined') {
+                summaryData[summaryDataIdx[x]].properties['ConfirmedSeries'] = emptyTimeSeries;
+            }
+
+            if (typeof summaryData[summaryDataIdx[x]].properties['RecoveredSeries'] === 'undefined') {
+                summaryData[summaryDataIdx[x]].properties['RecoveredSeries'] = emptyTimeSeries;
+            }
+
+            if (typeof summaryData[summaryDataIdx[x]].properties['DeathsSeries'] === 'undefined') {
+                summaryData[summaryDataIdx[x]].properties['DeathsSeries'] = emptyTimeSeries;
+            }
+
+            var prop = summaryData[summaryDataIdx[x]].properties;
+
+            for (j = 0; j < timestamps.length; j++) {
+                if (typeof prop.ConfirmedSeries[timestamps[j]] === 'undefined') {
+                    prop.ConfirmedSeries[timestamps[j]] = 0;
+                }
+
+                if (typeof prop.RecoveredSeries[timestamps[j]] === 'undefined') {
+                    prop.RecoveredSeries[timestamps[j]] = 0;
+                }
+
+                if (typeof prop.DeathsSeries[timestamps[j]] === 'undefined') {
+                    prop.DeathsSeries[timestamps[j]] = 0;
+                }
+
+                if (typeof summaryData[summaryDataIdx[x]].properties.ActiveSeries === 'undefined') {
+                    summaryData[summaryDataIdx[x]].properties.ActiveSeries = {};
+                }
+
+                 summaryData[summaryDataIdx[x]].properties.ActiveSeries[timestamps[j]] = prop.ConfirmedSeries[timestamps[j]] - prop.RecoveredSeries[timestamps[j]] - prop.DeathsSeries[timestamps[j]];
+            }
+        });
+
         var clusterAgg = {};
 
         for (j = 0; j < timestamps.length; j++) {
@@ -454,7 +510,11 @@ function updateChart() {
         //Calculate the total metrics across all features.
         totalConfirmed += features[i].properties['ConfirmedSeries'][selectedTimeStamp];
         totalRecovered += features[i].properties['RecoveredSeries'][selectedTimeStamp];
-        totalDeaths += features[i].properties['DeathsSeries'][selectedTimeStamp];
+        try {
+            totalDeaths += features[i].properties['DeathsSeries'][selectedTimeStamp];
+        } catch {
+            var t = 1;
+        }
     }
 
     //Calculate the total active. 
